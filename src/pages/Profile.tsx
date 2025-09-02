@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { X } from 'lucide-react';
+import { X, Upload, FileText, Download, Trash } from 'lucide-react';
 
 interface Profile {
   full_name: string;
@@ -34,14 +34,22 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newSubject, setNewSubject] = useState('');
+  const [certificates, setCertificates] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
       fetchProfile();
-      fetchTutorProfile();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (profile?.role === 'tutor') {
+      fetchTutorProfile();
+      fetchCertificates();
+    }
+  }, [profile?.role]);
 
   const fetchProfile = async () => {
     try {
@@ -76,6 +84,133 @@ export default function Profile() {
       console.error('Error fetching tutor profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCertificates = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('certificates')
+        .list(`${user.id}/`, {
+          limit: 100,
+          offset: 0,
+        });
+
+      if (error) throw error;
+      setCertificates(data || []);
+    } catch (error) {
+      console.error('Error fetching certificates:', error);
+    }
+  };
+
+  const uploadCertificate = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Only PDF, JPEG, and PNG files are allowed.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'File size must be less than 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileName = `${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage
+        .from('certificates')
+        .upload(`${user.id}/${fileName}`, file);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Certificate uploaded',
+        description: 'Your certificate has been uploaded successfully.',
+      });
+
+      fetchCertificates();
+    } catch (error) {
+      console.error('Error uploading certificate:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload certificate. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      // Reset file input
+      event.target.value = '';
+    }
+  };
+
+  const deleteCertificate = async (fileName: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase.storage
+        .from('certificates')
+        .remove([`${user.id}/${fileName}`]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Certificate deleted',
+        description: 'Certificate has been removed successfully.',
+      });
+
+      fetchCertificates();
+    } catch (error) {
+      console.error('Error deleting certificate:', error);
+      toast({
+        title: 'Delete failed',
+        description: 'Failed to delete certificate. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const downloadCertificate = async (fileName: string) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('certificates')
+        .download(`${user.id}/${fileName}`);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading certificate:', error);
+      toast({
+        title: 'Download failed',
+        description: 'Failed to download certificate. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -194,101 +329,159 @@ export default function Profile() {
           </Card>
 
           {profile?.role === 'tutor' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Tutor Information</CardTitle>
-                {tutorProfile?.is_approved === false && (
-                  <Badge variant="secondary">Pending Approval</Badge>
-                )}
-                {tutorProfile?.is_approved === true && (
-                  <Badge variant="default">Approved</Badge>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="subjects">Subjects</Label>
-                  <div className="flex gap-2 mb-2">
-                    <Input
-                      id="new-subject"
-                      placeholder="Add a subject"
-                      value={newSubject}
-                      onChange={(e) => setNewSubject(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && addSubject()}
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tutor Information</CardTitle>
+                  {tutorProfile?.is_approved === false && (
+                    <Badge variant="secondary">Pending Approval</Badge>
+                  )}
+                  {tutorProfile?.is_approved === true && (
+                    <Badge variant="default">Approved</Badge>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="subjects">Subjects</Label>
+                    <div className="flex gap-2 mb-2">
+                      <Input
+                        id="new-subject"
+                        placeholder="Add a subject"
+                        value={newSubject}
+                        onChange={(e) => setNewSubject(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && addSubject()}
+                      />
+                      <Button onClick={addSubject} type="button">Add</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {tutorProfile?.subjects.map((subject) => (
+                        <Badge key={subject} variant="outline" className="flex items-center gap-1">
+                          {subject}
+                          <X 
+                            className="h-3 w-3 cursor-pointer" 
+                            onClick={() => removeSubject(subject)}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      placeholder="Tell students about yourself..."
+                      value={tutorProfile?.bio || ''}
+                      onChange={(e) => setTutorProfile({
+                        ...tutorProfile,
+                        full_name: profile?.full_name || '',
+                        email: profile?.email || '',
+                        subjects: tutorProfile?.subjects || [],
+                        bio: e.target.value,
+                        is_approved: tutorProfile?.is_approved || false,
+                      })}
                     />
-                    <Button onClick={addSubject} type="button">Add</Button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {tutorProfile?.subjects.map((subject) => (
-                      <Badge key={subject} variant="outline" className="flex items-center gap-1">
-                        {subject}
-                        <X 
-                          className="h-3 w-3 cursor-pointer" 
-                          onClick={() => removeSubject(subject)}
-                        />
-                      </Badge>
-                    ))}
+
+                  <div>
+                    <Label htmlFor="availability">Availability</Label>
+                    <Input
+                      id="availability"
+                      placeholder="e.g., Weekdays 3-6 PM, Weekends flexible"
+                      value={tutorProfile?.availability || ''}
+                      onChange={(e) => setTutorProfile({
+                        ...tutorProfile,
+                        full_name: profile?.full_name || '',
+                        email: profile?.email || '',
+                        subjects: tutorProfile?.subjects || [],
+                        availability: e.target.value,
+                        is_approved: tutorProfile?.is_approved || false,
+                      })}
+                    />
                   </div>
-                </div>
 
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    placeholder="Tell students about yourself..."
-                    value={tutorProfile?.bio || ''}
-                    onChange={(e) => setTutorProfile({
-                      ...tutorProfile,
-                      full_name: profile?.full_name || '',
-                      email: profile?.email || '',
-                      subjects: tutorProfile?.subjects || [],
-                      bio: e.target.value,
-                      is_approved: tutorProfile?.is_approved || false,
-                    })}
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="rate">Hourly Rate ($)</Label>
+                    <Input
+                      id="rate"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="25.00"
+                      value={tutorProfile?.hourly_rate || ''}
+                      onChange={(e) => setTutorProfile({
+                        ...tutorProfile,
+                        full_name: profile?.full_name || '',
+                        email: profile?.email || '',
+                        subjects: tutorProfile?.subjects || [],
+                        hourly_rate: parseFloat(e.target.value) || undefined,
+                        is_approved: tutorProfile?.is_approved || false,
+                      })}
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="availability">Availability</Label>
-                  <Input
-                    id="availability"
-                    placeholder="e.g., Weekdays 3-6 PM, Weekends flexible"
-                    value={tutorProfile?.availability || ''}
-                    onChange={(e) => setTutorProfile({
-                      ...tutorProfile,
-                      full_name: profile?.full_name || '',
-                      email: profile?.email || '',
-                      subjects: tutorProfile?.subjects || [],
-                      availability: e.target.value,
-                      is_approved: tutorProfile?.is_approved || false,
-                    })}
-                  />
-                </div>
+                  <Button onClick={saveTutorProfile} disabled={saving} className="w-full">
+                    {saving ? 'Saving...' : 'Save Tutor Profile'}
+                  </Button>
+                </CardContent>
+              </Card>
 
-                <div>
-                  <Label htmlFor="rate">Hourly Rate ($)</Label>
-                  <Input
-                    id="rate"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="25.00"
-                    value={tutorProfile?.hourly_rate || ''}
-                    onChange={(e) => setTutorProfile({
-                      ...tutorProfile,
-                      full_name: profile?.full_name || '',
-                      email: profile?.email || '',
-                      subjects: tutorProfile?.subjects || [],
-                      hourly_rate: parseFloat(e.target.value) || undefined,
-                      is_approved: tutorProfile?.is_approved || false,
-                    })}
-                  />
-                </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Certificates
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="certificate-upload" className="block text-sm font-medium mb-2">
+                      Upload Certificate (PDF, JPEG, PNG - Max 5MB)
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="certificate-upload"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={uploadCertificate}
+                        disabled={uploading}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
 
-                <Button onClick={saveTutorProfile} disabled={saving} className="w-full">
-                  {saving ? 'Saving...' : 'Save Tutor Profile'}
-                </Button>
-              </CardContent>
-            </Card>
+                  {certificates.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Uploaded Certificates:</h4>
+                      {certificates.map((cert) => (
+                        <div key={cert.name} className="flex items-center justify-between p-2 border rounded">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            <span className="text-sm truncate">{cert.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => downloadCertificate(cert.name)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteCertificate(cert.name)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
           )}
         </div>
       </div>
