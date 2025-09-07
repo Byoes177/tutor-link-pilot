@@ -1,10 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, Clock, DollarSign, FileText, Download } from 'lucide-react';
+import { Mail, Clock, DollarSign, FileText, Download, Star, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface TutorCardProps {
   tutor: {
@@ -16,11 +17,18 @@ interface TutorCardProps {
     bio?: string;
     availability?: string;
     hourly_rate?: number;
+    education_level?: string;
+    teaching_level?: string[];
+    gender?: string;
+    teaching_location?: string[];
+    rating: number;
+    total_reviews: number;
   };
 }
 
 export function TutorCard({ tutor }: TutorCardProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [certificates, setCertificates] = useState<any[]>([]);
 
   useEffect(() => {
@@ -74,9 +82,23 @@ export function TutorCard({ tutor }: TutorCardProps) {
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader>
+    <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+      <CardHeader onClick={() => navigate(`/tutor/${tutor.id}`)}>
         <CardTitle className="text-lg">{tutor.full_name}</CardTitle>
+        {tutor.education_level && (
+          <p className="text-sm text-muted-foreground capitalize">{tutor.education_level}</p>
+        )}
+        
+        <div className="flex items-center gap-2 mb-2">
+          {tutor.rating > 0 && (
+            <div className="flex items-center gap-1">
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+              <span className="text-sm font-medium">{tutor.rating.toFixed(1)}</span>
+              <span className="text-xs text-muted-foreground">({tutor.total_reviews})</span>
+            </div>
+          )}
+        </div>
+        
         <div className="flex flex-wrap gap-1">
           {tutor.subjects.map((subject) => (
             <Badge key={subject} variant="secondary" className="text-xs">
@@ -91,6 +113,13 @@ export function TutorCard({ tutor }: TutorCardProps) {
         )}
         
         <div className="space-y-2">
+          {tutor.teaching_location && tutor.teaching_location.length > 0 && (
+            <div className="flex items-center text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4 mr-2" />
+              <span className="capitalize">{tutor.teaching_location.join(', ')}</span>
+            </div>
+          )}
+          
           {tutor.availability && (
             <div className="flex items-center text-sm text-muted-foreground">
               <Clock className="h-4 w-4 mr-2" />

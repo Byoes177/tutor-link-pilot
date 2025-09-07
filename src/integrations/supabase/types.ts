@@ -14,6 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          notes: string | null
+          session_date: string
+          start_time: string
+          status: string | null
+          student_id: string
+          subject: string | null
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          notes?: string | null
+          session_date: string
+          start_time: string
+          status?: string | null
+          student_id: string
+          subject?: string | null
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          notes?: string | null
+          session_date?: string
+          start_time?: string
+          status?: string | null
+          student_id?: string
+          subject?: string | null
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "tutors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificate_approvals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          file_name: string
+          id: string
+          is_approved: boolean | null
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          file_name: string
+          id?: string
+          is_approved?: boolean | null
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          file_name?: string
+          id?: string
+          is_approved?: boolean | null
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_approvals_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "tutors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -44,17 +135,152 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          student_id: string
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          student_id: string
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          student_id?: string
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "tutors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tutor_availability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_available: boolean | null
+          start_time: string
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_available?: boolean | null
+          start_time: string
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_available?: boolean | null
+          start_time?: string
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_availability_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "tutors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tutor_resources: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_path: string
+          file_type: string | null
+          id: string
+          is_public: boolean | null
+          subject: string | null
+          title: string
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_path: string
+          file_type?: string | null
+          id?: string
+          is_public?: boolean | null
+          subject?: string | null
+          title: string
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_path?: string
+          file_type?: string | null
+          id?: string
+          is_public?: boolean | null
+          subject?: string | null
+          title?: string
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_resources_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "tutors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tutors: {
         Row: {
           availability: string | null
           bio: string | null
           created_at: string
+          education_level: string | null
           email: string
           full_name: string
+          gender: string | null
           hourly_rate: number | null
           id: string
           is_approved: boolean
+          phone: string | null
+          profile_image_url: string | null
+          qualifications: string | null
+          rating: number | null
           subjects: string[]
+          teaching_level: string[] | null
+          teaching_location: string[] | null
+          total_reviews: number | null
           updated_at: string
           user_id: string
         }
@@ -62,12 +288,21 @@ export type Database = {
           availability?: string | null
           bio?: string | null
           created_at?: string
+          education_level?: string | null
           email: string
           full_name: string
+          gender?: string | null
           hourly_rate?: number | null
           id?: string
           is_approved?: boolean
+          phone?: string | null
+          profile_image_url?: string | null
+          qualifications?: string | null
+          rating?: number | null
           subjects: string[]
+          teaching_level?: string[] | null
+          teaching_location?: string[] | null
+          total_reviews?: number | null
           updated_at?: string
           user_id: string
         }
@@ -75,12 +310,21 @@ export type Database = {
           availability?: string | null
           bio?: string | null
           created_at?: string
+          education_level?: string | null
           email?: string
           full_name?: string
+          gender?: string | null
           hourly_rate?: number | null
           id?: string
           is_approved?: boolean
+          phone?: string | null
+          profile_image_url?: string | null
+          qualifications?: string | null
+          rating?: number | null
           subjects?: string[]
+          teaching_level?: string[] | null
+          teaching_location?: string[] | null
+          total_reviews?: number | null
           updated_at?: string
           user_id?: string
         }
