@@ -347,9 +347,18 @@ export default function AdminDashboard() {
 
   const downloadCertificate = async (fileName: string, tutorId: string) => {
     try {
+      // Get the tutor's user_id to build the correct path
+      const { data: tutorData, error: tutorError } = await supabase
+        .from('tutors')
+        .select('user_id')
+        .eq('id', tutorId)
+        .single();
+
+      if (tutorError) throw tutorError;
+
       const { data, error } = await supabase.storage
         .from('certificates')
-        .download(`${tutorId}/${fileName}`);
+        .download(`${tutorData.user_id}/${fileName}`);
 
       if (error) throw error;
 
@@ -365,6 +374,47 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: "Failed to download certificate",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteCertificate = async (certificateId: string, fileName: string, tutorId: string) => {
+    try {
+      // Get the tutor's user_id to build the correct path
+      const { data: tutorData, error: tutorError } = await supabase
+        .from('tutors')
+        .select('user_id')
+        .eq('id', tutorId)
+        .single();
+
+      if (tutorError) throw tutorError;
+
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('certificates')
+        .remove([`${tutorData.user_id}/${fileName}`]);
+
+      if (storageError) throw storageError;
+
+      // Delete from certificate_approvals table
+      const { error: dbError } = await supabase
+        .from('certificate_approvals')
+        .delete()
+        .eq('id', certificateId);
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Success",
+        description: "Certificate deleted successfully",
+      });
+
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to delete certificate",
         variant: "destructive",
       });
     }
@@ -601,6 +651,13 @@ export default function AdminDashboard() {
                             </Button>
                           </>
                         )}
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteCertificate(certificate.id, certificate.file_name, certificate.tutor_id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
