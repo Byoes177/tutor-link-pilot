@@ -68,14 +68,15 @@ export function Navbar() {
                       <User className="mr-2 h-4 w-4" />
                       Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      Dashboard
-                    </DropdownMenuItem>
-                    {userRole === 'admin' && (
+                    {userRole === 'admin' ? (
                       <DropdownMenuItem onClick={() => navigate('/admin')}>
                         <Shield className="mr-2 h-4 w-4" />
                         Admin Dashboard
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        Dashboard
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />

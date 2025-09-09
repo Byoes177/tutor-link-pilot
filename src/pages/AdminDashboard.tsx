@@ -188,6 +188,17 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
+      // Also update the tutors table if this user is a tutor
+      if (user.role === 'tutor') {
+        await supabase
+          .from('tutors')
+          .update({ 
+            full_name: user.full_name,
+            email: user.email 
+          })
+          .eq('user_id', user.user_id);
+      }
+
       toast({
         title: "Success",
         description: "User profile updated successfully",

@@ -134,15 +134,35 @@ export default function Profile() {
 
     try {
       const fileName = `${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage
+      const { error: storageError } = await supabase.storage
         .from('certificates')
         .upload(`${user.id}/${fileName}`, file);
 
-      if (error) throw error;
+      if (storageError) throw storageError;
+
+      // Get tutor ID for the current user
+      const { data: tutorData } = await supabase
+        .from('tutors')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (tutorData) {
+        // Add to certificate_approvals table for admin review
+        const { error: approvalError } = await supabase
+          .from('certificate_approvals')
+          .insert({
+            tutor_id: tutorData.id,
+            file_name: fileName,
+            is_approved: false
+          });
+
+        if (approvalError) throw approvalError;
+      }
 
       toast({
         title: 'Certificate uploaded',
-        description: 'Your certificate has been uploaded successfully.',
+        description: 'Your certificate has been uploaded and is pending admin approval.',
       });
 
       fetchCertificates();

@@ -106,12 +106,11 @@ export function TutorProfile({ tutorId, onBookSession }: TutorProfileProps) {
       setResources(resourcesData || []);
 
       // Fetch approved certificates
-      const { data: certificatesData, error: certificatesError } = await supabase.storage
-        .from('certificates')
-        .list(`${tutorData.user_id}/`, {
-          limit: 100,
-          offset: 0,
-        });
+      const { data: certificatesData, error: certificatesError } = await supabase
+        .from('certificate_approvals')
+        .select('file_name')
+        .eq('tutor_id', tutorId)
+        .eq('is_approved', true);
 
       if (certificatesError) throw certificatesError;
       setCertificates(certificatesData || []);
@@ -315,14 +314,14 @@ export function TutorProfile({ tutorId, onBookSession }: TutorProfileProps) {
                 <div className="space-y-2">
                   {certificates.map((cert) => (
                     <Button
-                      key={cert.name}
+                      key={cert.file_name}
                       variant="outline"
                       size="sm"
-                      onClick={() => downloadCertificate(cert.name)}
+                      onClick={() => downloadCertificate(cert.file_name)}
                       className="w-full justify-start"
                     >
                       <Download className="h-3 w-3 mr-2" />
-                      {cert.name.substring(cert.name.indexOf('-') + 1)}
+                      {cert.file_name.substring(cert.file_name.indexOf('-') + 1)}
                     </Button>
                   ))}
                 </div>
