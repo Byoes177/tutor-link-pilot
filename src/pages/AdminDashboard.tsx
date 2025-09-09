@@ -359,7 +359,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const filteredUsers = selectedRole 
+  const filteredUsers = selectedRole && selectedRole !== 'all'
     ? users.filter(user => user.role === selectedRole)
     : users;
 
@@ -448,7 +448,7 @@ export default function AdminDashboard() {
                       <SelectValue placeholder="Filter by role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Roles</SelectItem>
+                      <SelectItem value="all">All Roles</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="tutor">Tutor</SelectItem>
                       <SelectItem value="student">Student</SelectItem>
