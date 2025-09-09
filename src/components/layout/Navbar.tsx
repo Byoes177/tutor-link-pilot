@@ -1,7 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { GraduationCap, User, LogOut, Settings } from 'lucide-react';
+import { GraduationCap, User, LogOut, Settings, Shield } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +15,25 @@ import {
 export function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [userRole, setUserRole] = useState<string>('');
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (data) {
+          setUserRole(data.role);
+        }
+      }
+    };
+
+    fetchUserRole();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -51,6 +72,12 @@ export function Navbar() {
                       <Settings className="mr-2 h-4 w-4" />
                       Dashboard
                     </DropdownMenuItem>
+                    {userRole === 'admin' && (
+                      <DropdownMenuItem onClick={() => navigate('/admin')}>
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin Dashboard
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 h-4 w-4" />
