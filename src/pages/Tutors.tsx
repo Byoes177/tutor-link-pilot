@@ -40,6 +40,7 @@ export default function Tutors() {
 
       if (error) throw error;
       setTutors(data || []);
+      setFilteredTutors(data || []); // Initialize filtered tutors with all tutors
     } catch (error: any) {
       toast({
         title: "Error",
