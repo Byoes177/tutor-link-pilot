@@ -454,21 +454,35 @@ export default function Profile() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="certificate-upload" className="block text-sm font-medium mb-2">
-                      Upload Certificate (PDF, JPEG, PNG - Max 5MB)
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="certificate-upload"
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={uploadCertificate}
-                        disabled={uploading}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
+                   <div className="space-y-3">
+                     <Label className="block text-sm font-medium">
+                       📋 Upload Certificate
+                     </Label>
+                     <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                       <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                       <p className="text-sm text-muted-foreground mb-4">
+                         Upload your teaching certificates or qualifications
+                       </p>
+                       <Input
+                         id="certificate-upload"
+                         type="file"
+                         accept=".pdf,.jpg,.jpeg,.png"
+                         onChange={uploadCertificate}
+                         disabled={uploading}
+                         className="hidden"
+                       />
+                       <Button 
+                         variant="outline" 
+                         onClick={() => document.getElementById('certificate-upload')?.click()}
+                         disabled={uploading}
+                       >
+                         {uploading ? 'Uploading...' : '🔗 Choose File'}
+                       </Button>
+                       <p className="text-xs text-muted-foreground mt-2">
+                         PDF, JPEG, PNG - Max 5MB
+                       </p>
+                     </div>
+                   </div>
 
                   {certificates.length > 0 && (
                     <div className="space-y-2">

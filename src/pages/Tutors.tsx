@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { TutorCard } from '@/components/TutorCard';
 import { TutorFilters, FilterState } from '@/components/TutorFilters';
+import { EmptyState } from '@/components/EmptyState';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Users, Search } from 'lucide-react';
 
 interface Tutor {
   id: string;
@@ -140,12 +142,20 @@ export default function Tutors() {
           <TutorFilters onFiltersChange={handleFiltersChange} />
         </div>
 
-        {filteredTutors.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              No tutors found matching your criteria.
-            </p>
-          </div>
+        {tutors.length === 0 ? (
+          <EmptyState
+            icon={<Users className="h-6 w-6 text-muted-foreground" />}
+            title="No tutors available"
+            description="There are currently no approved tutors on the platform. Check back soon as we're always adding new qualified tutors!"
+          />
+        ) : filteredTutors.length === 0 ? (
+          <EmptyState
+            icon={<Search className="h-6 w-6 text-muted-foreground" />}
+            title="No tutors found"
+            description="No tutors match your current search criteria. Try adjusting your filters or check back later for new tutors."
+            actionLabel="Clear Filters"
+            onAction={() => window.location.reload()}
+          />
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredTutors.map((tutor) => (

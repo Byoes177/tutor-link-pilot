@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { SignUpNotification } from '@/components/SignUpNotification';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -15,6 +16,7 @@ export default function Auth() {
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<'student' | 'tutor'>('student');
   const [loading, setLoading] = useState(false);
+  const [showSignUpNotification, setShowSignUpNotification] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -50,21 +52,23 @@ export default function Auth() {
         variant: "destructive",
       });
     } else {
-      toast({
-        title: "Success",
-        description: "Account created! Please check your email to verify your account.",
-      });
+      setShowSignUpNotification(true);
     }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">TutorConnect</CardTitle>
-          <CardDescription>Connect with tutors or become one</CardDescription>
-        </CardHeader>
+    <>
+      <SignUpNotification 
+        show={showSignUpNotification} 
+        onDismiss={() => setShowSignUpNotification(false)} 
+      />
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">TutorConnect</CardTitle>
+            <CardDescription>Connect with tutors or become one</CardDescription>
+          </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
@@ -158,5 +162,6 @@ export default function Auth() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }

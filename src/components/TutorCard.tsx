@@ -158,10 +158,15 @@ export function TutorCard({ tutor }: TutorCardProps) {
           </div>
         )}
 
-        <Button onClick={handleContact} className="w-full">
-          <Mail className="h-4 w-4 mr-2" />
-          Contact Tutor
-        </Button>
+        <div className="space-y-2">
+          <Button onClick={() => navigate(`/tutor/${tutor.id}`)} className="w-full">
+            📅 Book Session
+          </Button>
+          <Button onClick={handleContact} variant="outline" className="w-full">
+            <Mail className="h-4 w-4 mr-2" />
+            Contact Tutor
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
