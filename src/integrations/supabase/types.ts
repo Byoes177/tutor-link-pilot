@@ -16,6 +16,9 @@ export type Database = {
     Tables: {
       bookings: {
         Row: {
+          cancellation_deadline: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           created_at: string
           end_time: string
           id: string
@@ -29,6 +32,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cancellation_deadline?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           end_time: string
           id?: string
@@ -42,6 +48,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cancellation_deadline?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           end_time?: string
           id?: string
@@ -105,6 +114,21 @@ export type Database = {
           },
         ]
       }
+      kv_store_a86b219b: {
+        Row: {
+          key: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           created_at: string
@@ -139,29 +163,38 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          email_verified: boolean | null
           full_name: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string
+          verification_sent_at: string | null
+          verification_token: string | null
         }
         Insert: {
           created_at?: string
           email: string
+          email_verified?: boolean | null
           full_name: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id: string
+          verification_sent_at?: string | null
+          verification_token?: string | null
         }
         Update: {
           created_at?: string
           email?: string
+          email_verified?: boolean | null
           full_name?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string
+          verification_sent_at?: string | null
+          verification_token?: string | null
         }
         Relationships: []
       }
@@ -298,11 +331,14 @@ export type Database = {
           created_at: string
           education_level: string | null
           email: string
+          experience_years: number | null
           full_name: string
           gender: string | null
           hourly_rate: number | null
           id: string
           is_approved: boolean
+          languages: string[] | null
+          location: string | null
           phone: string | null
           profile_image_url: string | null
           qualifications: string | null
@@ -320,11 +356,14 @@ export type Database = {
           created_at?: string
           education_level?: string | null
           email: string
+          experience_years?: number | null
           full_name: string
           gender?: string | null
           hourly_rate?: number | null
           id?: string
           is_approved?: boolean
+          languages?: string[] | null
+          location?: string | null
           phone?: string | null
           profile_image_url?: string | null
           qualifications?: string | null
@@ -342,11 +381,14 @@ export type Database = {
           created_at?: string
           education_level?: string | null
           email?: string
+          experience_years?: number | null
           full_name?: string
           gender?: string | null
           hourly_rate?: number | null
           id?: string
           is_approved?: boolean
+          languages?: string[] | null
+          location?: string | null
           phone?: string | null
           profile_image_url?: string | null
           qualifications?: string | null
@@ -365,6 +407,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_booking_conflict: {
+        Args: {
+          p_end_time: string
+          p_exclude_booking_id?: string
+          p_session_date: string
+          p_start_time: string
+          p_tutor_id: string
+        }
+        Returns: boolean
+      }
+      get_all_subjects: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          subject: string
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
