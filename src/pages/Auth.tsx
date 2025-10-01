@@ -53,6 +53,10 @@ export default function Auth() {
       });
     } else {
       setShowSignUpNotification(true);
+      // Mock console verification link for demo
+      console.log('🔗 DEMO VERIFICATION LINK (production will send real email):', 
+        `${window.location.origin}/?verified=true&email=${encodeURIComponent(email)}`
+      );
     }
     setLoading(false);
   };

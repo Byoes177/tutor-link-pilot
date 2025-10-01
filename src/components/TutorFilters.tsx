@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
 import { Search, Filter, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TutorFiltersProps {
   onFiltersChange: (filters: FilterState) => void;
@@ -34,26 +36,21 @@ const TEACHING_LEVELS = [
   { value: 'tertiary', label: 'Tertiary' }
 ];
 
-const SUBJECTS = [
-  'Mathematics', 'English', 'Science', 'Physics', 'Chemistry', 'Biology',
-  'History', 'Geography', 'Computer Science', 'Art', 'Music', 'Languages'
-];
-
 const GENDERS = [
   { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say' }
+  { value: 'female', label: 'Female' }
 ];
 
 const TEACHING_LOCATIONS = [
-  { value: 'online', label: 'Online' },
-  { value: 'in_person', label: 'In-person' },
-  { value: 'institute', label: 'Institute' }
+  { value: 'Gadong', label: 'Gadong' },
+  { value: 'Kiulap', label: 'Kiulap' },
+  { value: 'BSB', label: 'BSB' },
+  { value: 'Online', label: 'Online' }
 ];
 
 export function TutorFilters({ onFiltersChange }: TutorFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const [subjects, setSubjects] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: '',
     educationLevel: [],
@@ -64,6 +61,17 @@ export function TutorFilters({ onFiltersChange }: TutorFiltersProps) {
     minRating: 0,
     maxHourlyRate: 1000
   });
+
+  // Fetch dynamic subjects from database
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      const { data, error } = await supabase.rpc('get_all_subjects');
+      if (!error && data) {
+        setSubjects(data.map((row: { subject: string }) => row.subject));
+      }
+    };
+    fetchSubjects();
+  }, []);
 
   const updateFilters = (newFilters: Partial<FilterState>) => {
     const updatedFilters = { ...filters, ...newFilters };
@@ -219,24 +227,28 @@ export function TutorFilters({ onFiltersChange }: TutorFiltersProps) {
                 </div>
               </div>
 
-              {/* Subjects */}
+              {/* Subjects - Dynamic from DB */}
               <div>
                 <h4 className="font-medium mb-3">Subjects</h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {SUBJECTS.map((subject) => (
-                    <div key={subject} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`subject-${subject}`}
-                        checked={filters.subjects.includes(subject)}
-                        onCheckedChange={(checked) => 
-                          handleArrayFilter('subjects', subject, checked as boolean)
-                        }
-                      />
-                      <label htmlFor={`subject-${subject}`} className="text-sm">
-                        {subject}
-                      </label>
-                    </div>
-                  ))}
+                  {subjects.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No subjects available</p>
+                  ) : (
+                    subjects.map((subject) => (
+                      <div key={subject} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`subject-${subject}`}
+                          checked={filters.subjects.includes(subject)}
+                          onCheckedChange={(checked) => 
+                            handleArrayFilter('subjects', subject, checked as boolean)
+                          }
+                        />
+                        <label htmlFor={`subject-${subject}`} className="text-sm">
+                          {subject}
+                        </label>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -264,12 +276,16 @@ export function TutorFilters({ onFiltersChange }: TutorFiltersProps) {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground">Max Hourly Rate</label>
-                    <Input
-                      type="number"
-                      value={filters.maxHourlyRate}
-                      onChange={(e) => updateFilters({ maxHourlyRate: parseInt(e.target.value) || 1000 })}
-                      placeholder="Max rate per hour"
+                    <label className="text-sm text-muted-foreground mb-2 block">
+                      Max Hourly Rate: ${filters.maxHourlyRate}
+                    </label>
+                    <Slider
+                      value={[filters.maxHourlyRate]}
+                      onValueChange={(value) => updateFilters({ maxHourlyRate: value[0] })}
+                      min={0}
+                      max={200}
+                      step={5}
+                      className="w-full"
                     />
                   </div>
                 </div>

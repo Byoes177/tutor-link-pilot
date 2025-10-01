@@ -120,11 +120,11 @@ export default function Profile() {
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         title: 'File too large',
-        description: 'File size must be less than 5MB.',
+        description: 'File size must be less than 10MB.',
         variant: 'destructive',
       });
       return;
@@ -440,6 +440,82 @@ export default function Profile() {
                     />
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="gender">Gender</Label>
+                      <select
+                        id="gender"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={(tutorProfile as any)?.gender || ''}
+                        onChange={(e) => setTutorProfile({
+                          ...tutorProfile,
+                          full_name: profile?.full_name || '',
+                          email: profile?.email || '',
+                          subjects: tutorProfile?.subjects || [],
+                          is_approved: tutorProfile?.is_approved || false,
+                          gender: e.target.value
+                        } as any)}
+                      >
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="experience">Experience (years)</Label>
+                      <Input
+                        id="experience"
+                        type="number"
+                        min="0"
+                        placeholder="5"
+                        value={(tutorProfile as any)?.experience_years || ''}
+                        onChange={(e) => setTutorProfile({
+                          ...tutorProfile,
+                          full_name: profile?.full_name || '',
+                          email: profile?.email || '',
+                          subjects: tutorProfile?.subjects || [],
+                          is_approved: tutorProfile?.is_approved || false,
+                          experience_years: parseInt(e.target.value) || undefined
+                        } as any)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      placeholder="e.g., Gadong, Kiulap, or Online"
+                      value={(tutorProfile as any)?.location || ''}
+                      onChange={(e) => setTutorProfile({
+                        ...tutorProfile,
+                        full_name: profile?.full_name || '',
+                        email: profile?.email || '',
+                        subjects: tutorProfile?.subjects || [],
+                        is_approved: tutorProfile?.is_approved || false,
+                        location: e.target.value
+                      } as any)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="languages">Languages (comma-separated)</Label>
+                    <Input
+                      id="languages"
+                      placeholder="e.g., English, Malay, Mandarin"
+                      value={(tutorProfile as any)?.languages?.join(', ') || ''}
+                      onChange={(e) => setTutorProfile({
+                        ...tutorProfile,
+                        full_name: profile?.full_name || '',
+                        email: profile?.email || '',
+                        subjects: tutorProfile?.subjects || [],
+                        is_approved: tutorProfile?.is_approved || false,
+                        languages: e.target.value.split(',').map(l => l.trim()).filter(l => l)
+                      } as any)}
+                    />
+                  </div>
+
                   <Button onClick={saveTutorProfile} disabled={saving} className="w-full">
                     {saving ? 'Saving...' : 'Save Tutor Profile'}
                   </Button>
@@ -478,9 +554,9 @@ export default function Profile() {
                        >
                          {uploading ? 'Uploading...' : '🔗 Choose File'}
                        </Button>
-                       <p className="text-xs text-muted-foreground mt-2">
-                         PDF, JPEG, PNG - Max 5MB
-                       </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          PDF, JPEG, PNG - Max 10MB
+                        </p>
                      </div>
                    </div>
 
