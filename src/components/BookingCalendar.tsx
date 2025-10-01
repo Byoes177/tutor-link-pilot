@@ -135,11 +135,48 @@ export function BookingCalendar({ tutorId, onBookingComplete }: BookingCalendarP
       return;
     }
 
+    // Check email verification
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('email_verified')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!profileData?.email_verified) {
+      toast({
+        title: "Email Verification Required",
+        description: "Please verify your email before booking sessions. Check your inbox for the verification link.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setBookingLoading(true);
       
       const selectedSlot = timeSlots.find(slot => slot.start_time === selectedTime);
       if (!selectedSlot) return;
+
+      // Check for booking conflicts
+      const { data: conflictCheck, error: conflictError } = await supabase
+        .rpc('check_booking_conflict', {
+          p_tutor_id: tutorId,
+          p_session_date: selectedDate.toISOString().split('T')[0],
+          p_start_time: selectedSlot.start_time,
+          p_end_time: selectedSlot.end_time
+        });
+
+      if (conflictError) throw conflictError;
+
+      if (conflictCheck) {
+        toast({
+          title: "Slot Taken",
+          description: "This time slot is no longer available. Please choose another time.",
+          variant: "destructive",
+        });
+        generateTimeSlots(); // Refresh to show updated slots
+        return;
+      }
 
       const { error } = await supabase
         .from('bookings')
