@@ -154,8 +154,10 @@
 ## 🔧 Additional Enhancements
 
 ### Security Improvements
+- ✅ **CRITICAL: Separate user_roles table to prevent privilege escalation**
+- ✅ Role checks use SECURITY DEFINER functions (prevents recursive RLS)
 - ✅ All database functions use `SECURITY DEFINER` with `SET search_path = public`
-- ✅ RLS policies on all tables
+- ✅ RLS policies on all tables including user_roles
 - ✅ Foreign key constraints properly set
 - ✅ GIN index on `tutors.subjects` for performance
 
