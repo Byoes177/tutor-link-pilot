@@ -53,14 +53,25 @@ export default function Profile() {
 
   const fetchProfile = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user?.id)
         .single();
 
-      if (error) throw error;
-      setProfile(data);
+      if (profileError) throw profileError;
+      
+      // Fetch role from user_roles table
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      setProfile({
+        ...profileData,
+        role: roleData?.role || 'student',
+      });
     } catch (error: any) {
       toast({
         title: "Error",

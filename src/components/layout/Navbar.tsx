@@ -21,10 +21,10 @@ export function Navbar() {
     const fetchUserRole = async () => {
       if (user) {
         const { data } = await supabase
-          .from('profiles')
+          .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         
         if (data) {
           setUserRole(data.role);

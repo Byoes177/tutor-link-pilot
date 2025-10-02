@@ -166,7 +166,6 @@ export type Database = {
           email_verified: boolean | null
           full_name: string
           id: string
-          role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string
           verification_sent_at: string | null
@@ -178,7 +177,6 @@ export type Database = {
           email_verified?: boolean | null
           full_name: string
           id?: string
-          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id: string
           verification_sent_at?: string | null
@@ -190,7 +188,6 @@ export type Database = {
           email_verified?: boolean | null
           full_name?: string
           id?: string
-          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string
           verification_sent_at?: string | null
@@ -402,6 +399,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -423,12 +441,20 @@ export type Database = {
           subject: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }
     Enums: {
+      app_role: "admin" | "student" | "tutor"
       user_role: "student" | "tutor" | "admin"
     }
     CompositeTypes: {
@@ -557,6 +583,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "student", "tutor"],
       user_role: ["student", "tutor", "admin"],
     },
   },

@@ -76,13 +76,33 @@ export function useUsers() {
   return useQuery({
     queryKey: QUERY_KEYS.users,
     queryFn: async (): Promise<User[]> => {
-      const { data, error } = await supabase
+      const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      
+      // Fetch roles for each user
+      const usersWithRoles = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', profile.user_id)
+            .maybeSingle();
+          
+          return {
+            id: profile.id,
+            full_name: profile.full_name,
+            email: profile.email,
+            role: roleData?.role || 'student',
+            created_at: profile.created_at,
+          } as User;
+        })
+      );
+      
+      return usersWithRoles;
     },
   });
 }
@@ -217,10 +237,16 @@ export function useUpdateUserRole() {
 
   return useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: 'student' | 'tutor' | 'admin' }) => {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
+      // Delete existing role
+      await supabase
+        .from('user_roles')
+        .delete()
         .eq('user_id', userId);
+      
+      // Insert new role
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: newRole });
       
       if (error) throw error;
     },

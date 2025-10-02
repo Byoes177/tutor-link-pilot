@@ -54,10 +54,10 @@ export default function Dashboard() {
   const fetchProfile = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_roles')
         .select('role')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setProfile(data);
@@ -92,13 +92,30 @@ export default function Dashboard() {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+      
+      // Fetch roles for each user
+      const usersWithRoles = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', profile.user_id)
+            .maybeSingle();
+          
+          return {
+            ...profile,
+            role: roleData?.role || 'student',
+          };
+        })
+      );
+      
+      setUsers(usersWithRoles as UserProfile[]);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -133,10 +150,16 @@ export default function Dashboard() {
 
   const updateUserRole = async (userId: string, newRole: 'student' | 'tutor' | 'admin') => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
+      // Delete existing role
+      await supabase
+        .from('user_roles')
+        .delete()
         .eq('user_id', userId);
+      
+      // Insert new role
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: newRole });
 
       if (error) throw error;
       
