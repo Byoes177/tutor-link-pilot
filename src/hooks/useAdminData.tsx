@@ -93,7 +93,7 @@ export function useUsers() {
             .maybeSingle();
           
           return {
-            id: profile.id,
+            id: profile.user_id, // Use user_id as id for role operations
             full_name: profile.full_name,
             email: profile.email,
             role: roleData?.role || 'student',
@@ -237,18 +237,29 @@ export function useUpdateUserRole() {
 
   return useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: 'student' | 'tutor' | 'admin' }) => {
-      // Delete existing role
-      await supabase
+      // Check if role exists
+      const { data: existingRole } = await supabase
         .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
       
-      // Insert new role
-      const { error } = await supabase
-        .from('user_roles')
-        .insert({ user_id: userId, role: newRole });
-      
-      if (error) throw error;
+      if (existingRole) {
+        // Update existing role
+        const { error } = await supabase
+          .from('user_roles')
+          .update({ role: newRole })
+          .eq('user_id', userId);
+        
+        if (error) throw error;
+      } else {
+        // Insert new role
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: newRole });
+        
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users });
@@ -257,7 +268,8 @@ export function useUpdateUserRole() {
         description: "User role updated successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Role update error:', error);
       toast({
         title: "Error",
         description: "Failed to update user role",
