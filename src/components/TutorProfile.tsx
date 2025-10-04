@@ -71,9 +71,12 @@ export function TutorProfile({ tutorId, onBookSession }: TutorProfileProps) {
         .from('tutors')
         .select('*')
         .eq('id', tutorId)
-        .single();
+        .maybeSingle();
 
       if (tutorError) throw tutorError;
+      if (!tutorData) {
+        throw new Error('Tutor not found');
+      }
       setTutor(tutorData);
 
       // Fetch reviews with student names

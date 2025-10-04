@@ -74,9 +74,16 @@ export function BookingCalendar({ tutorId, onBookingComplete }: BookingCalendarP
     if (!selectedDate) return;
 
     const dayOfWeek = selectedDate.getDay();
-    const dayAvailability = availability.filter(a => a.day_of_week === dayOfWeek);
+    let dayAvailability = availability.filter(a => a.day_of_week === dayOfWeek);
 
-    if (dayAvailability.length === 0) {
+    // If no availability records exist, create default availability (9 AM - 5 PM every day)
+    if (availability.length === 0) {
+      dayAvailability = [{
+        day_of_week: dayOfWeek,
+        start_time: '09:00',
+        end_time: '17:00'
+      }];
+    } else if (dayAvailability.length === 0) {
       setTimeSlots([]);
       return;
     }
