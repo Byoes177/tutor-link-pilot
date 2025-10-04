@@ -25,6 +25,12 @@ interface TutorProfile {
   availability?: string;
   hourly_rate?: number;
   is_approved: boolean;
+  profile_image_url?: string;
+  qualifications?: string;
+  gender?: string;
+  experience_years?: number;
+  location?: string;
+  languages?: string[];
 }
 
 export default function Profile() {
@@ -36,6 +42,7 @@ export default function Profile() {
   const [newSubject, setNewSubject] = useState('');
   const [certificates, setCertificates] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -245,6 +252,73 @@ export default function Profile() {
     }
   };
 
+  const uploadProfilePhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Only JPEG, PNG, and WEBP images are allowed.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Image size must be less than 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingPhoto(true);
+
+    try {
+      const fileName = `profile-${Date.now()}.${file.name.split('.').pop()}`;
+      const { error: storageError, data } = await supabase.storage
+        .from('certificates')
+        .upload(`${user.id}/${fileName}`, file, { upsert: true });
+
+      if (storageError) throw storageError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('certificates')
+        .getPublicUrl(`${user.id}/${fileName}`);
+
+      // Update tutor profile with the photo URL
+      setTutorProfile({
+        ...tutorProfile,
+        full_name: profile?.full_name || '',
+        email: profile?.email || '',
+        subjects: tutorProfile?.subjects || [],
+        is_approved: tutorProfile?.is_approved || false,
+        profile_image_url: publicUrl
+      });
+
+      toast({
+        title: 'Profile photo uploaded',
+        description: 'Your profile photo has been updated. Remember to save your profile.',
+      });
+    } catch (error) {
+      console.error('Error uploading profile photo:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload profile photo. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingPhoto(false);
+      event.target.value = '';
+    }
+  };
+
   const saveTutorProfile = async () => {
     if (!user || !profile) return;
 
@@ -258,6 +332,12 @@ export default function Profile() {
         bio: tutorProfile?.bio || '',
         availability: tutorProfile?.availability || '',
         hourly_rate: tutorProfile?.hourly_rate || null,
+        profile_image_url: tutorProfile?.profile_image_url || null,
+        qualifications: tutorProfile?.qualifications || null,
+        gender: tutorProfile?.gender || null,
+        experience_years: tutorProfile?.experience_years || null,
+        location: tutorProfile?.location || null,
+        languages: tutorProfile?.languages || [],
       };
 
       if (tutorProfile?.id) {
@@ -372,6 +452,42 @@ export default function Profile() {
                   )}
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Profile Photo Upload */}
+                  <div>
+                    <Label>Profile Photo</Label>
+                    <div className="flex items-center gap-4 mt-2">
+                      {tutorProfile?.profile_image_url && (
+                        <img 
+                          src={tutorProfile.profile_image_url} 
+                          alt="Profile" 
+                          className="h-20 w-20 rounded-full object-cover"
+                        />
+                      )}
+                      <div>
+                        <Input
+                          id="photo-upload"
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg,image/webp"
+                          onChange={uploadProfilePhoto}
+                          disabled={uploadingPhoto}
+                          className="hidden"
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => document.getElementById('photo-upload')?.click()}
+                          disabled={uploadingPhoto}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {uploadingPhoto ? 'Uploading...' : 'Upload Photo'}
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          JPEG, PNG, WEBP - Max 5MB
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <Label htmlFor="subjects">Subjects</Label>
                     <div className="flex gap-2 mb-2">
@@ -524,6 +640,24 @@ export default function Profile() {
                         is_approved: tutorProfile?.is_approved || false,
                         languages: e.target.value.split(',').map(l => l.trim()).filter(l => l)
                       } as any)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="qualifications">Qualifications</Label>
+                    <Textarea
+                      id="qualifications"
+                      placeholder="List your degrees, certifications, teaching experience..."
+                      value={tutorProfile?.qualifications || ''}
+                      onChange={(e) => setTutorProfile({
+                        ...tutorProfile,
+                        full_name: profile?.full_name || '',
+                        email: profile?.email || '',
+                        subjects: tutorProfile?.subjects || [],
+                        is_approved: tutorProfile?.is_approved || false,
+                        qualifications: e.target.value
+                      })}
+                      rows={4}
                     />
                   </div>
 

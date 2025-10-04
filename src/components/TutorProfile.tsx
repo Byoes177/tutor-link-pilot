@@ -304,16 +304,18 @@ export function TutorProfile({ tutorId, onBookSession }: TutorProfileProps) {
           <CardHeader>
             <CardTitle>Qualifications</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             {tutor.qualifications ? (
-              <p className="text-muted-foreground">{tutor.qualifications}</p>
+              <div className="whitespace-pre-wrap text-muted-foreground">
+                {tutor.qualifications}
+              </div>
             ) : (
               <p className="text-muted-foreground">No qualifications listed</p>
             )}
             
             {certificates.length > 0 && (
               <div className="mt-4">
-                <h4 className="font-medium mb-2">Certificates</h4>
+                <h4 className="font-medium mb-2">Verified Certificates</h4>
                 <div className="space-y-2">
                   {certificates.map((cert) => (
                     <Button
