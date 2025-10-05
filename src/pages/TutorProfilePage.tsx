@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { TutorProfile } from '@/components/TutorProfile';
 import { BookingCalendar } from '@/components/BookingCalendar';
@@ -7,6 +7,7 @@ import { PaymentFlow } from '@/components/PaymentFlow';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Calendar, MessageCircle, CreditCard } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function TutorProfilePage() {
   const { tutorId } = useParams<{ tutorId: string }>();
@@ -17,7 +18,37 @@ export default function TutorProfilePage() {
     sessionDate: string;
     sessionTime: string;
     subject?: string;
-  } | null>(null);
+  }>({
+    tutorName: 'Demo Tutor',
+    hourlyRate: 50,
+    sessionDate: new Date().toLocaleDateString(),
+    sessionTime: '10:00 AM',
+    subject: 'Mathematics'
+  });
+
+  useEffect(() => {
+    const fetchTutorData = async () => {
+      const { data: tutor } = await supabase
+        .from('tutors')
+        .select('full_name, hourly_rate, subjects')
+        .eq('id', tutorId)
+        .single();
+
+      if (tutor) {
+        setPaymentData({
+          tutorName: tutor.full_name,
+          hourlyRate: tutor.hourly_rate || 50,
+          sessionDate: new Date().toLocaleDateString(),
+          sessionTime: '10:00 AM',
+          subject: tutor.subjects?.[0] || 'General'
+        });
+      }
+    };
+
+    if (tutorId) {
+      fetchTutorData();
+    }
+  }, [tutorId]);
 
   if (!tutorId) {
     return (
@@ -63,7 +94,7 @@ export default function TutorProfilePage() {
                   <MessageCircle className="h-3 w-3 mr-1" />
                   Chat
                 </TabsTrigger>
-                <TabsTrigger value="payment" className="text-xs" disabled={!paymentData}>
+                <TabsTrigger value="payment" className="text-xs">
                   <CreditCard className="h-3 w-3 mr-1" />
                   Pay
                 </TabsTrigger>
@@ -101,15 +132,12 @@ export default function TutorProfilePage() {
               </TabsContent>
 
               <TabsContent value="payment" className="mt-4">
-                {paymentData && (
-                  <PaymentFlow 
-                    {...paymentData}
-                    onPaymentComplete={() => {
-                      setActiveTab('profile');
-                      setPaymentData(null);
-                    }}
-                  />
-                )}
+                <PaymentFlow 
+                  {...paymentData}
+                  onPaymentComplete={() => {
+                    setActiveTab('profile');
+                  }}
+                />
               </TabsContent>
             </Tabs>
           </div>
