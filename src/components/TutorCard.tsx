@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, Clock, DollarSign, FileText, Download, Star, MapPin } from 'lucide-react';
+import { Mail, Clock, DollarSign, FileText, Download, Star, MapPin, User, GraduationCap } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -113,6 +113,20 @@ export function TutorCard({ tutor }: TutorCardProps) {
         )}
         
         <div className="space-y-2">
+          {tutor.gender && (
+            <div className="flex items-center text-sm text-muted-foreground">
+              <User className="h-4 w-4 mr-2" />
+              <span className="capitalize">{tutor.gender}</span>
+            </div>
+          )}
+          
+          {tutor.teaching_level && tutor.teaching_level.length > 0 && (
+            <div className="flex items-center text-sm text-muted-foreground">
+              <GraduationCap className="h-4 w-4 mr-2" />
+              <span className="capitalize">Teaches: {tutor.teaching_level.join(', ')}</span>
+            </div>
+          )}
+          
           {tutor.teaching_location && tutor.teaching_location.length > 0 && (
             <div className="flex items-center text-sm text-muted-foreground">
               <MapPin className="h-4 w-4 mr-2" />
