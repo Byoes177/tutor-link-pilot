@@ -17,6 +17,7 @@ export interface FilterState {
   educationLevel: string[];
   teachingLevel: string[];
   subjects: string[];
+  qualifications: string[];
   gender: string[];
   teachingLocation: string[];
   minRating: number;
@@ -51,18 +52,20 @@ const TEACHING_LOCATIONS = [
 export function TutorFilters({ onFiltersChange }: TutorFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [subjects, setSubjects] = useState<string[]>([]);
+  const [qualifications, setQualifications] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: '',
     educationLevel: [],
     teachingLevel: [],
     subjects: [],
+    qualifications: [],
     gender: [],
     teachingLocation: [],
     minRating: 0,
     maxHourlyRate: 1000
   });
 
-  // Fetch dynamic subjects from database
+  // Fetch dynamic subjects and qualifications from database
   useEffect(() => {
     const fetchSubjects = async () => {
       const { data, error } = await supabase.rpc('get_all_subjects');
@@ -70,7 +73,14 @@ export function TutorFilters({ onFiltersChange }: TutorFiltersProps) {
         setSubjects(data.map((row: { subject: string }) => row.subject));
       }
     };
+    const fetchQualifications = async () => {
+      const { data, error } = await supabase.rpc('get_all_qualifications');
+      if (!error && data) {
+        setQualifications(data.map((row: { qualification: string }) => row.qualification));
+      }
+    };
     fetchSubjects();
+    fetchQualifications();
   }, []);
 
   const updateFilters = (newFilters: Partial<FilterState>) => {
@@ -85,6 +95,7 @@ export function TutorFilters({ onFiltersChange }: TutorFiltersProps) {
       educationLevel: [],
       teachingLevel: [],
       subjects: [],
+      qualifications: [],
       gender: [],
       teachingLocation: [],
       minRating: 0,
@@ -127,8 +138,8 @@ export function TutorFilters({ onFiltersChange }: TutorFiltersProps) {
           Filters
         </Button>
         {(filters.educationLevel.length > 0 || filters.teachingLevel.length > 0 || 
-          filters.subjects.length > 0 || filters.gender.length > 0 || 
-          filters.teachingLocation.length > 0) && (
+          filters.subjects.length > 0 || filters.qualifications.length > 0 || 
+          filters.gender.length > 0 || filters.teachingLocation.length > 0) && (
           <Button variant="outline" onClick={clearFilters}>
             <X className="h-4 w-4 mr-2" />
             Clear
@@ -245,6 +256,31 @@ export function TutorFilters({ onFiltersChange }: TutorFiltersProps) {
                         />
                         <label htmlFor={`subject-${subject}`} className="text-sm">
                           {subject}
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Qualifications - Dynamic from DB */}
+              <div>
+                <h4 className="font-medium mb-3">Qualifications</h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {qualifications.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No qualifications available</p>
+                  ) : (
+                    qualifications.map((qualification) => (
+                      <div key={qualification} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`qualification-${qualification}`}
+                          checked={filters.qualifications.includes(qualification)}
+                          onCheckedChange={(checked) => 
+                            handleArrayFilter('qualifications', qualification, checked as boolean)
+                          }
+                        />
+                        <label htmlFor={`qualification-${qualification}`} className="text-sm">
+                          {qualification}
                         </label>
                       </div>
                     ))

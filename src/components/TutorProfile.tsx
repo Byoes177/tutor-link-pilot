@@ -26,7 +26,7 @@ interface TutorData {
   teaching_level?: string[];
   gender?: string;
   teaching_location?: string[];
-  qualifications?: string;
+  qualifications?: string[];
   rating: number;
   total_reviews: number;
   profile_image_url?: string;
@@ -326,9 +326,13 @@ export function TutorProfile({ tutorId, onBookSession }: TutorProfileProps) {
             <CardTitle>Qualifications</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {tutor.qualifications ? (
-              <div className="whitespace-pre-wrap text-muted-foreground">
-                {tutor.qualifications}
+            {tutor.qualifications && tutor.qualifications.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {tutor.qualifications.map((qualification) => (
+                  <Badge key={qualification} variant="secondary">
+                    {qualification}
+                  </Badge>
+                ))}
               </div>
             ) : (
               <p className="text-muted-foreground">No qualifications listed</p>

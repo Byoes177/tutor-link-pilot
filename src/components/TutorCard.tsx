@@ -14,6 +14,7 @@ interface TutorCardProps {
     full_name: string;
     email: string;
     subjects: string[];
+    qualifications?: string[];
     bio?: string;
     availability?: string;
     hourly_rate?: number;
@@ -106,6 +107,16 @@ export function TutorCard({ tutor }: TutorCardProps) {
             </Badge>
           ))}
         </div>
+
+        {tutor.qualifications && tutor.qualifications.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {tutor.qualifications.map((qualification) => (
+              <Badge key={qualification} variant="outline" className="text-xs">
+                {qualification}
+              </Badge>
+            ))}
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-3">
         {tutor.bio && (

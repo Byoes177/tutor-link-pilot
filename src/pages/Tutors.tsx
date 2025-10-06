@@ -12,6 +12,7 @@ interface Tutor {
   full_name: string;
   email: string;
   subjects: string[];
+  qualifications?: string[];
   bio?: string;
   availability?: string;
   hourly_rate?: number;
@@ -105,6 +106,15 @@ export default function Tutors() {
       filtered = filtered.filter(tutor => 
         tutor.teaching_location && tutor.teaching_location.some(location => 
           filters.teachingLocation.includes(location)
+        )
+      );
+    }
+
+    // Qualifications filter
+    if (filters.qualifications.length > 0) {
+      filtered = filtered.filter(tutor => 
+        tutor.qualifications && tutor.qualifications.some(qualification => 
+          filters.qualifications.includes(qualification)
         )
       );
     }

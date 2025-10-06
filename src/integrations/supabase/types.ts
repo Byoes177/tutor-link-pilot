@@ -338,7 +338,7 @@ export type Database = {
           location: string | null
           phone: string | null
           profile_image_url: string | null
-          qualifications: string | null
+          qualifications: string[] | null
           rating: number | null
           subjects: string[]
           teaching_level: string[] | null
@@ -363,7 +363,7 @@ export type Database = {
           location?: string | null
           phone?: string | null
           profile_image_url?: string | null
-          qualifications?: string | null
+          qualifications?: string[] | null
           rating?: number | null
           subjects: string[]
           teaching_level?: string[] | null
@@ -388,7 +388,7 @@ export type Database = {
           location?: string | null
           phone?: string | null
           profile_image_url?: string | null
-          qualifications?: string | null
+          qualifications?: string[] | null
           rating?: number | null
           subjects?: string[]
           teaching_level?: string[] | null
@@ -434,6 +434,12 @@ export type Database = {
           p_tutor_id: string
         }
         Returns: boolean
+      }
+      get_all_qualifications: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          qualification: string
+        }[]
       }
       get_all_subjects: {
         Args: Record<PropertyKey, never>

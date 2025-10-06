@@ -26,7 +26,7 @@ interface TutorProfile {
   hourly_rate?: number;
   is_approved: boolean;
   profile_image_url?: string;
-  qualifications?: string;
+  qualifications?: string[];
   gender?: string;
   experience_years?: number;
   location?: string;
@@ -40,6 +40,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newSubject, setNewSubject] = useState('');
+  const [newQualification, setNewQualification] = useState('');
   const [certificates, setCertificates] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -333,7 +334,7 @@ export default function Profile() {
         availability: tutorProfile?.availability || '',
         hourly_rate: tutorProfile?.hourly_rate || null,
         profile_image_url: tutorProfile?.profile_image_url || null,
-        qualifications: tutorProfile?.qualifications || null,
+        qualifications: tutorProfile?.qualifications || [],
         gender: tutorProfile?.gender || null,
         experience_years: tutorProfile?.experience_years || null,
         location: tutorProfile?.location || null,
@@ -399,6 +400,42 @@ export default function Profile() {
       full_name: profile?.full_name || '',
       email: profile?.email || '',
       subjects: currentSubjects.filter(s => s !== subject),
+      is_approved: tutorProfile?.is_approved || false,
+    });
+  };
+
+  const addQualification = () => {
+    if (!newQualification.trim()) return;
+    
+    const currentQualifications = tutorProfile?.qualifications || [];
+    if (currentQualifications.includes(newQualification.trim())) {
+      toast({
+        title: "Error",
+        description: "Qualification already added",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTutorProfile({
+      ...tutorProfile,
+      full_name: profile?.full_name || '',
+      email: profile?.email || '',
+      subjects: tutorProfile?.subjects || [],
+      qualifications: [...currentQualifications, newQualification.trim()],
+      is_approved: tutorProfile?.is_approved || false,
+    });
+    setNewQualification('');
+  };
+
+  const removeQualification = (qualification: string) => {
+    const currentQualifications = tutorProfile?.qualifications || [];
+    setTutorProfile({
+      ...tutorProfile,
+      full_name: profile?.full_name || '',
+      email: profile?.email || '',
+      subjects: tutorProfile?.subjects || [],
+      qualifications: currentQualifications.filter(q => q !== qualification),
       is_approved: tutorProfile?.is_approved || false,
     });
   };
@@ -645,20 +682,27 @@ export default function Profile() {
 
                   <div>
                     <Label htmlFor="qualifications">Qualifications</Label>
-                    <Textarea
-                      id="qualifications"
-                      placeholder="List your degrees, certifications, teaching experience..."
-                      value={tutorProfile?.qualifications || ''}
-                      onChange={(e) => setTutorProfile({
-                        ...tutorProfile,
-                        full_name: profile?.full_name || '',
-                        email: profile?.email || '',
-                        subjects: tutorProfile?.subjects || [],
-                        is_approved: tutorProfile?.is_approved || false,
-                        qualifications: e.target.value
-                      })}
-                      rows={4}
-                    />
+                    <div className="flex gap-2 mb-2">
+                      <Input
+                        id="new-qualification"
+                        placeholder="Add a qualification"
+                        value={newQualification}
+                        onChange={(e) => setNewQualification(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && addQualification()}
+                      />
+                      <Button onClick={addQualification} type="button">Add</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {tutorProfile?.qualifications?.map((qualification) => (
+                        <Badge key={qualification} variant="outline" className="flex items-center gap-1">
+                          {qualification}
+                          <X 
+                            className="h-3 w-3 cursor-pointer" 
+                            onClick={() => removeQualification(qualification)}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
 
                   <Button onClick={saveTutorProfile} disabled={saving} className="w-full">
