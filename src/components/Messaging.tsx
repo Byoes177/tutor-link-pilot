@@ -19,13 +19,16 @@ interface MessagingProps {
   recipientId: string;
   recipientName: string;
   recipientType: 'tutor' | 'student';
+  bookingId?: string;
+  onFocusTopicUpdate?: (topic: string) => void;
 }
 
-export function Messaging({ recipientId, recipientName, recipientType }: MessagingProps) {
+export function Messaging({ recipientId, recipientName, recipientType, bookingId, onFocusTopicUpdate }: MessagingProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [focusTopic, setFocusTopic] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -99,8 +102,18 @@ export function Messaging({ recipientId, recipientName, recipientType }: Messagi
     );
   }
 
+  const saveFocusTopic = () => {
+    if (focusTopic.trim() && onFocusTopicUpdate) {
+      onFocusTopicUpdate(focusTopic);
+      toast({
+        title: 'Focus topic saved',
+        description: 'The tutor will prepare materials for this topic.',
+      });
+    }
+  };
+
   return (
-    <Card className="h-[500px] flex flex-col">
+    <Card className="h-[600px] flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5" />
@@ -151,6 +164,24 @@ export function Messaging({ recipientId, recipientName, recipientType }: Messagi
           )}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Focus Topic Section */}
+        {recipientType === 'tutor' && (
+          <div className="mb-3 p-3 bg-muted/50 rounded-lg">
+            <label className="text-sm font-medium mb-2 block">Focus for Next Session</label>
+            <div className="flex gap-2">
+              <Input
+                value={focusTopic}
+                onChange={(e) => setFocusTopic(e.target.value)}
+                placeholder="What would you like to focus on?"
+                className="flex-1"
+              />
+              <Button onClick={saveFocusTopic} variant="secondary" size="sm">
+                Save
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Message Input */}
         <div className="flex gap-2">

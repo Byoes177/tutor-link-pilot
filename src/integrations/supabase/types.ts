@@ -21,6 +21,7 @@ export type Database = {
           cancelled_by: string | null
           created_at: string
           end_time: string
+          focus_topic: string | null
           id: string
           notes: string | null
           session_date: string
@@ -37,6 +38,7 @@ export type Database = {
           cancelled_by?: string | null
           created_at?: string
           end_time: string
+          focus_topic?: string | null
           id?: string
           notes?: string | null
           session_date: string
@@ -53,6 +55,7 @@ export type Database = {
           cancelled_by?: string | null
           created_at?: string
           end_time?: string
+          focus_topic?: string | null
           id?: string
           notes?: string | null
           session_date?: string
@@ -159,6 +162,74 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_child_accounts: {
+        Row: {
+          child_user_id: string
+          created_at: string
+          id: string
+          parent_user_id: string
+        }
+        Insert: {
+          child_user_id: string
+          created_at?: string
+          id?: string
+          parent_user_id: string
+        }
+        Update: {
+          child_user_id?: string
+          created_at?: string
+          id?: string
+          parent_user_id?: string
+        }
+        Relationships: []
+      }
+      payment_transactions: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          id: string
+          payment_method: string | null
+          released_at: string | null
+          status: string
+          student_id: string
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string
+          id?: string
+          payment_method?: string | null
+          released_at?: string | null
+          status?: string
+          student_id: string
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          id?: string
+          payment_method?: string | null
+          released_at?: string | null
+          status?: string
+          student_id?: string
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -166,6 +237,13 @@ export type Database = {
           email_verified: boolean | null
           full_name: string
           id: string
+          learning_level: string | null
+          location: string | null
+          preferred_mode: string[] | null
+          registration_fee_amount: number | null
+          registration_fee_paid: boolean | null
+          registration_paid_at: string | null
+          subjects_of_interest: string[] | null
           updated_at: string
           user_id: string
           verification_sent_at: string | null
@@ -177,6 +255,13 @@ export type Database = {
           email_verified?: boolean | null
           full_name: string
           id?: string
+          learning_level?: string | null
+          location?: string | null
+          preferred_mode?: string[] | null
+          registration_fee_amount?: number | null
+          registration_fee_paid?: boolean | null
+          registration_paid_at?: string | null
+          subjects_of_interest?: string[] | null
           updated_at?: string
           user_id: string
           verification_sent_at?: string | null
@@ -188,6 +273,13 @@ export type Database = {
           email_verified?: boolean | null
           full_name?: string
           id?: string
+          learning_level?: string | null
+          location?: string | null
+          preferred_mode?: string[] | null
+          registration_fee_amount?: number | null
+          registration_fee_paid?: boolean | null
+          registration_paid_at?: string | null
+          subjects_of_interest?: string[] | null
           updated_at?: string
           user_id?: string
           verification_sent_at?: string | null
