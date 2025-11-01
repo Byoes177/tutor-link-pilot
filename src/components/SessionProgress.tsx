@@ -1,283 +1,171 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { BookOpen, Plus } from 'lucide-react';
+import { Plus, Calendar, BookOpen } from 'lucide-react';
+import { AddProgressDialog } from './AddProgressDialog';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
-interface Booking {
+interface CompletedSession {
   id: string;
   session_date: string;
-  subject: string;
-  student_id: string;
   start_time: string;
   end_time: string;
-  profiles?: {
-    full_name: string;
-  };
-}
-
-interface ProgressForm {
-  booking_id: string;
   subject: string;
-  date_of_session: string;
-  progress_note: string;
-  skill_level: 'Needs support' | 'Satisfactory' | 'Good' | 'Excellent';
-  homework_next_action: string;
+  student_id: string;
+  student_name: string;
+  has_progress: boolean;
 }
 
 export function SessionProgress() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [completedSessions, setCompletedSessions] = useState<Booking[]>([]);
-  const [tutorId, setTutorId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<Booking | null>(null);
-  const [formData, setFormData] = useState<ProgressForm>({
-    booking_id: '',
-    subject: '',
-    date_of_session: '',
-    progress_note: '',
-    skill_level: 'Satisfactory',
-    homework_next_action: '',
+  const [selectedSession, setSelectedSession] = useState<CompletedSession | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: tutorProfile } = useQuery({
+    queryKey: ['tutor-profile'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('tutors')
+        .select('id, user_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchTutorData();
-    }
-  }, [user]);
+  const { data: completedSessions, isLoading } = useQuery({
+    queryKey: ['completed-sessions', tutorProfile?.id],
+    queryFn: async () => {
+      if (!tutorProfile?.id) return [];
 
-  const fetchTutorData = async () => {
-    try {
-      const { data: tutorData } = await supabase
-        .from('tutors')
-        .select('id')
-        .eq('user_id', user?.id)
-        .maybeSingle();
-
-      if (tutorData) {
-        setTutorId(tutorData.id);
-        await fetchCompletedSessions(tutorData.id);
-      }
-    } catch (error) {
-      console.error('Error fetching tutor data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCompletedSessions = async (tutorId: string) => {
-    try {
-      const { data, error } = await supabase
+      const { data: bookings, error } = await supabase
         .from('bookings')
-        .select('*')
-        .eq('tutor_id', tutorId)
+        .select(`
+          id,
+          session_date,
+          start_time,
+          end_time,
+          subject,
+          student_id,
+          profiles!bookings_student_id_fkey(full_name)
+        `)
+        .eq('tutor_id', tutorProfile.id)
         .eq('status', 'completed')
         .order('session_date', { ascending: false });
 
       if (error) throw error;
-      
-      // Fetch student names separately
-      const sessionsWithProfiles = await Promise.all(
-        (data || []).map(async (session) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('user_id', session.student_id)
-            .maybeSingle();
-          
-          return {
-            ...session,
-            profiles: profile
-          };
-        })
-      );
-      
-      setCompletedSessions(sessionsWithProfiles as Booking[]);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load completed sessions',
-        variant: 'destructive',
-      });
-    }
-  };
 
-  const handleOpenDialog = (session: Booking) => {
-    setSelectedSession(session);
-    setFormData({
-      booking_id: session.id,
-      subject: session.subject || '',
-      date_of_session: session.session_date,
-      progress_note: '',
-      skill_level: 'Satisfactory',
-      homework_next_action: '',
-    });
-    setDialogOpen(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!tutorId || !selectedSession) return;
-
-    try {
-      const { error: progressError } = await supabase
+      // Check which sessions already have progress entries
+      const { data: progressEntries } = await supabase
         .from('learner_progress')
-        .insert({
-          learner_id: selectedSession.student_id,
-          tutor_id: tutorId,
-          booking_id: formData.booking_id,
-          subject: formData.subject,
-          date_of_session: formData.date_of_session,
-          progress_note: formData.progress_note,
-          skill_level: formData.skill_level,
-          homework_next_action: formData.homework_next_action,
-        });
+        .select('booking_id')
+        .eq('tutor_id', tutorProfile.id);
 
-      if (progressError) throw progressError;
+      const progressBookingIds = new Set(progressEntries?.map(p => p.booking_id) || []);
 
-      // Create notification for student
-      const { error: notifError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: selectedSession.student_id,
-          title: 'Progress Update',
-          message: `Your tutor has updated your progress for ${formData.subject}.`,
-          type: 'progress',
-          related_id: formData.booking_id,
-        });
+      return bookings.map((booking: any) => ({
+        id: booking.id,
+        session_date: booking.session_date,
+        start_time: booking.start_time,
+        end_time: booking.end_time,
+        subject: booking.subject,
+        student_id: booking.student_id,
+        student_name: booking.profiles?.full_name || 'Unknown',
+        has_progress: progressBookingIds.has(booking.id),
+      }));
+    },
+    enabled: !!tutorProfile?.id,
+  });
 
-      if (notifError) console.error('Notification error:', notifError);
-
-      toast({
-        title: 'Success',
-        description: 'Progress added successfully',
-      });
-
-      setDialogOpen(false);
-      setSelectedSession(null);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to add progress',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  if (loading) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-muted-foreground">Loading sessions...</div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Session Progress</h2>
+        <div>
+          <h2 className="text-3xl font-bold">Session Progress</h2>
+          <p className="text-muted-foreground">Add progress notes for completed sessions</p>
+        </div>
       </div>
 
-      <div className="grid gap-4">
-        {completedSessions.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">
-                No completed sessions yet
+      {completedSessions?.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-12">
+              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Completed Sessions</h3>
+              <p className="text-muted-foreground">
+                Completed sessions will appear here for you to add progress notes.
               </p>
-            </CardContent>
-          </Card>
-        ) : (
-          completedSessions.map((session) => (
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {completedSessions?.map((session) => (
             <Card key={session.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{session.subject}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Student: {session.profiles?.full_name}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Date: {format(new Date(session.session_date), 'PPP')}
-                    </p>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{session.subject}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Student: {session.student_name}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {format(new Date(session.session_date), 'MMM dd, yyyy')}
+                          </div>
+                          <div>
+                            {session.start_time} - {session.end_time}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <Badge variant="secondary">Completed</Badge>
+                  <div>
+                    {session.has_progress ? (
+                      <div className="text-sm text-muted-foreground">
+                        Progress added
+                      </div>
+                    ) : (
+                      <Button onClick={() => setSelectedSession(session)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Progress
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <Dialog open={dialogOpen && selectedSession?.id === session.id} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => handleOpenDialog(session)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Progress
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Add Progress for {session.subject}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div>
-                        <Label htmlFor="progress_note">Progress Note</Label>
-                        <Textarea
-                          id="progress_note"
-                          required
-                          value={formData.progress_note}
-                          onChange={(e) => setFormData({ ...formData, progress_note: e.target.value })}
-                          placeholder="Describe the student's progress during this session..."
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="skill_level">Skill Level</Label>
-                        <Select
-                          value={formData.skill_level}
-                          onValueChange={(value: any) => setFormData({ ...formData, skill_level: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Needs support">Needs support</SelectItem>
-                            <SelectItem value="Satisfactory">Satisfactory</SelectItem>
-                            <SelectItem value="Good">Good</SelectItem>
-                            <SelectItem value="Excellent">Excellent</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="homework_next_action">Homework / Next Action (Optional)</Label>
-                        <Textarea
-                          id="homework_next_action"
-                          value={formData.homework_next_action}
-                          onChange={(e) => setFormData({ ...formData, homework_next_action: e.target.value })}
-                          placeholder="Any homework or action items for the student..."
-                        />
-                      </div>
-
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button type="submit">Submit Progress</Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
               </CardContent>
             </Card>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
+
+      <AddProgressDialog
+        session={selectedSession}
+        tutorId={tutorProfile?.id}
+        onClose={() => setSelectedSession(null)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['completed-sessions'] });
+          setSelectedSession(null);
+        }}
+      />
     </div>
   );
 }
