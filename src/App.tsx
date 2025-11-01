@@ -14,6 +14,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Earnings from "./pages/Earnings";
+import Progress from "./pages/Progress";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,11 @@ const App = () => (
                 <Route path="/earnings" element={
                   <ProtectedRoute>
                     <Earnings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/progress" element={
+                  <ProtectedRoute>
+                    <Progress />
                   </ProtectedRoute>
                 } />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

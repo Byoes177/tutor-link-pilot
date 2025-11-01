@@ -132,6 +132,56 @@ export type Database = {
         }
         Relationships: []
       }
+      learner_progress: {
+        Row: {
+          booking_id: string
+          created_at: string
+          date_of_session: string
+          homework_next_action: string | null
+          id: string
+          learner_id: string
+          progress_note: string
+          skill_level: Database["public"]["Enums"]["skill_level"]
+          subject: string
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          date_of_session: string
+          homework_next_action?: string | null
+          id?: string
+          learner_id: string
+          progress_note: string
+          skill_level: Database["public"]["Enums"]["skill_level"]
+          subject: string
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          date_of_session?: string
+          homework_next_action?: string | null
+          id?: string
+          learner_id?: string
+          progress_note?: string
+          skill_level?: Database["public"]["Enums"]["skill_level"]
+          subject?: string
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_progress_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           created_at: string
@@ -159,6 +209,39 @@ export type Database = {
           sender_id?: string
           sender_name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          related_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          related_id?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          related_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -528,13 +611,13 @@ export type Database = {
         Returns: boolean
       }
       get_all_qualifications: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           qualification: string
         }[]
       }
       get_all_subjects: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           subject: string
         }[]
@@ -546,13 +629,11 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "student" | "tutor"
+      skill_level: "Needs support" | "Satisfactory" | "Good" | "Excellent"
       user_role: "student" | "tutor" | "admin"
     }
     CompositeTypes: {
@@ -682,6 +763,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "student", "tutor"],
+      skill_level: ["Needs support", "Satisfactory", "Good", "Excellent"],
       user_role: ["student", "tutor", "admin"],
     },
   },

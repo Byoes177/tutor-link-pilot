@@ -57,6 +57,9 @@ export function Navbar() {
                 <Link to="/tutors">
                   <Button variant="ghost">Find Tutors</Button>
                 </Link>
+                <Link to="/progress">
+                  <Button variant="ghost">Progress</Button>
+                </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
