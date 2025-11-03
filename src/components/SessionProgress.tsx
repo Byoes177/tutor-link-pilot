@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, BookOpen } from 'lucide-react';
+import { Plus, Calendar, BookOpen, Pencil } from 'lucide-react';
 import { AddProgressDialog } from './AddProgressDialog';
+import { LearningGoals } from './progress/LearningGoals';
+import { ProgressChart } from './progress/ProgressChart';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -65,10 +67,10 @@ export function SessionProgress() {
       // Check which sessions already have progress entries
       const { data: progressEntries } = await supabase
         .from('learner_progress')
-        .select('booking_id')
+        .select('booking_id, id, skill_level, date_of_session')
         .eq('tutor_id', tutorProfile.id);
 
-      const progressBookingIds = new Set(progressEntries?.map(p => p.booking_id) || []);
+      const progressMap = new Map(progressEntries?.map(p => [p.booking_id, p]) || []);
 
       return bookings.map((booking: any) => ({
         id: booking.id,
@@ -78,11 +80,37 @@ export function SessionProgress() {
         subject: booking.subject,
         student_id: booking.student_id,
         student_name: booking.profiles?.full_name || 'Unknown',
-        has_progress: progressBookingIds.has(booking.id),
+        has_progress: progressMap.has(booking.id),
+        progress_entry: progressMap.get(booking.id),
       }));
     },
     enabled: !!tutorProfile?.id,
   });
+
+  // Get all progress entries for charts
+  const { data: allProgressEntries = [] } = useQuery({
+    queryKey: ['all-progress-entries', tutorProfile?.id],
+    queryFn: async () => {
+      if (!tutorProfile?.id) return [];
+
+      const { data, error } = await supabase
+        .from('learner_progress')
+        .select('subject, skill_level, date_of_session, learner_id')
+        .eq('tutor_id', tutorProfile.id)
+        .order('date_of_session', { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!tutorProfile?.id,
+  });
+
+  // Group by subject for charts
+  const progressBySubject = allProgressEntries.reduce((acc, entry) => {
+    if (!acc[entry.subject]) acc[entry.subject] = [];
+    acc[entry.subject].push(entry);
+    return acc;
+  }, {} as Record<string, any[]>);
 
   if (isLoading) {
     return (
@@ -97,9 +125,26 @@ export function SessionProgress() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold">Session Progress</h2>
-          <p className="text-muted-foreground">Add progress notes for completed sessions</p>
+          <p className="text-muted-foreground">Track and manage student progress</p>
         </div>
       </div>
+
+      {/* Progress Charts */}
+      {Object.keys(progressBySubject).length > 0 && (
+        <div className="grid md:grid-cols-2 gap-4">
+          {Object.entries(progressBySubject).map(([subject, entries]) => (
+            <ProgressChart key={subject} subject={subject} entries={entries} />
+          ))}
+        </div>
+      )}
+
+      {/* Learning Goals - Show for first student or allow tutor to select */}
+      {completedSessions && completedSessions.length > 0 && (
+        <LearningGoals 
+          learnerId={completedSessions[0].student_id}
+          canEdit={true}
+        />
+      )}
 
       {completedSessions?.length === 0 ? (
         <Card>
@@ -140,9 +185,14 @@ export function SessionProgress() {
                   </div>
                   <div>
                     {session.has_progress ? (
-                      <div className="text-sm text-muted-foreground">
-                        Progress added
-                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setSelectedSession(session)}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit Progress
+                      </Button>
                     ) : (
                       <Button onClick={() => setSelectedSession(session)}>
                         <Plus className="h-4 w-4 mr-2" />

@@ -182,6 +182,45 @@ export type Database = {
           },
         ]
       }
+      learning_goals: {
+        Row: {
+          achieved_date: string | null
+          created_at: string
+          goal_text: string
+          id: string
+          is_achieved: boolean | null
+          learner_id: string
+          subject: string
+          target_date: string | null
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          achieved_date?: string | null
+          created_at?: string
+          goal_text: string
+          id?: string
+          is_achieved?: boolean | null
+          learner_id: string
+          subject: string
+          target_date?: string | null
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          achieved_date?: string | null
+          created_at?: string
+          goal_text?: string
+          id?: string
+          is_achieved?: boolean | null
+          learner_id?: string
+          subject?: string
+          target_date?: string | null
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           created_at: string
@@ -369,6 +408,41 @@ export type Database = {
           verification_token?: string | null
         }
         Relationships: []
+      }
+      progress_feedback: {
+        Row: {
+          created_at: string
+          created_by: string
+          feedback_text: string
+          id: string
+          progress_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          feedback_text: string
+          id?: string
+          progress_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          feedback_text?: string
+          id?: string
+          progress_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_feedback_progress_id_fkey"
+            columns: ["progress_id"]
+            isOneToOne: false
+            referencedRelation: "learner_progress"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {

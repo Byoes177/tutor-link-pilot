@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -13,6 +12,9 @@ import {
 } from '@/components/ui/select';
 import { Calendar, User, BookOpen, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
+import { ProgressChart } from './progress/ProgressChart';
+import { LearningGoals } from './progress/LearningGoals';
+import { ProgressFeedback } from './progress/ProgressFeedback';
 
 interface ProgressEntry {
   id: string;
@@ -210,11 +212,26 @@ export function LearningProgress() {
         </Card>
       ) : (
         <div className="space-y-8">
+          {/* Progress Charts */}
+          <div className="grid md:grid-cols-2 gap-4">
+            {Object.entries(groupedBySubject).map(([subject, entries]) => (
+              <ProgressChart key={subject} subject={subject} entries={entries} />
+            ))}
+          </div>
+
+          {/* Learning Goals */}
+          <LearningGoals 
+            learnerId={selectedChild === 'all' ? userData?.userId || '' : selectedChild}
+            subject={selectedSubject !== 'all' ? selectedSubject : undefined}
+            canEdit={false}
+          />
+
+          {/* Progress Entries by Subject */}
           {Object.entries(groupedBySubject).map(([subject, entries]) => (
             <div key={subject}>
               <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
-                {subject}
+                {subject} - Session Details
               </h3>
               <div className="grid gap-4">
                 {entries.map((entry) => (
@@ -243,7 +260,7 @@ export function LearningProgress() {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-4">
                       <div>
                         <h4 className="font-medium mb-1">Progress Note</h4>
                         <p className="text-muted-foreground">{entry.progress_note}</p>
@@ -257,6 +274,7 @@ export function LearningProgress() {
                           <p className="text-muted-foreground">{entry.homework_next_action}</p>
                         </div>
                       )}
+                      <ProgressFeedback progressId={entry.id} canAddFeedback={true} />
                     </CardContent>
                   </Card>
                 ))}
